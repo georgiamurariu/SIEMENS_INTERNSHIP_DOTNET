@@ -60,10 +60,3 @@ Test endpoints
 GET http://localhost:5030/api/grades
 GET http://localhost:5030/api/grades/1
 GET http://localhost:5030/api/grades/passing?n=2
-
-Apoi dai push pentru cerința 3:
-
-```bash
-git add README.md
-git commit -m "Add README for requirement 3"
-git push -u origin cerinta_3
