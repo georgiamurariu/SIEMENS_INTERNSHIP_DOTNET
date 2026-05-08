@@ -5,7 +5,9 @@ using Siemens.Internship2026.GradeBook.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+
 builder.Services.AddSingleton<IGradeRepository, InMemoryGradeRepository>();
+builder.Services.AddScoped<IGradeService, GradeService>();
 builder.Services.AddScoped<IGradeStatisticsService, GradeStatisticsService>();
 
 var app = builder.Build();

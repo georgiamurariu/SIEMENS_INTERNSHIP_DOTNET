@@ -10,16 +10,16 @@ namespace Siemens.Internship2026.GradeBook.Controllers;
 [Route("api/[controller]")]
 public sealed class GradesController : ControllerBase
 {
-    private readonly IGradeRepository _gradeRepository;
+    private readonly IGradeService _gradeService;
     private readonly IGradeStatisticsService _statisticsService;
     private readonly ILogger<GradesController> _logger;
 
     public GradesController(
-        IGradeRepository gradeRepository,
+        IGradeService gradeService,
         IGradeStatisticsService statisticsService,
         ILogger<GradesController> logger)
     {
-        _gradeRepository = gradeRepository;
+        _gradeService = gradeService;
         _statisticsService = statisticsService;
         _logger = logger;
     }
@@ -30,7 +30,7 @@ public sealed class GradesController : ControllerBase
     {
         _logger.LogInformation("GET api/grades called");
 
-        var grades = await _gradeRepository.GetAllAsync(cancellationToken);
+        var grades = await _gradeService.GetAllActiveGradesAsync(cancellationToken);
         var retrievedAtUtc = DateTime.UtcNow;
         var statistics = _statisticsService.Calculate(grades, retrievedAtUtc);
 
@@ -39,11 +39,6 @@ public sealed class GradesController : ControllerBase
             Data = grades,
             Statistics = statistics
         };
-
-        _logger.LogInformation(
-            "Returning {TotalCount} grades, average value: {AverageValue}",
-            statistics.TotalCount,
-            statistics.AverageValue);
 
         return Ok(response);
     }
@@ -61,12 +56,32 @@ public sealed class GradesController : ControllerBase
             return BadRequest("Id must be a positive integer.");
         }
 
-        var grade = await _gradeRepository.GetByIdAsync(id, cancellationToken);
+        var grade = await _gradeService.GetActiveGradeByIdAsync(id, cancellationToken);
+
         if (grade is null)
         {
             return NotFound($"Grade with Id {id} was not found.");
         }
 
         return Ok(grade);
+    }
+
+    [HttpGet("passing")]
+    [ProducesResponseType(typeof(IReadOnlyCollection<Grade>), StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    public async Task<ActionResult<IReadOnlyCollection<Grade>>> GetFirstPassingActiveGrades(
+        [FromQuery(Name = "n")] int count,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("GET api/grades/passing?n={Count} called", count);
+
+        if (count <= 0)
+        {
+            return BadRequest("N must be a positive integer.");
+        }
+
+        var grades = await _gradeService.GetFirstPassingActiveGradesAsync(count, cancellationToken);
+
+        return Ok(grades);
     }
 }
